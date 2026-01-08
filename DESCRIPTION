@@ -1,14 +1,17 @@
 Package: irtbem2pl
-Title: Calibrating 2PL model "Item Response Theory" (TRI)
+Title: Marginalized Bayesian Item Parameter Estimation, 2PL model TRI
 Version: 1.0.0
 Authors@R: 
-    person("Juan Luis", "legorreta", , "jlegorreta2002@yahoo.com.mx", role = c("aut", "cre", "cph"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    c(person("Juan Luis", "legorreta", , "jlegorreta2002@yahoo.com.mx", role = c("aut", "cre"), comment = c(ORCID = "YOUR-ORCID-ID")),
+               person("Shaoyang", "Guo", role =  "aut"),
+               person("Chanjin", "Zheng", role = "aut"),
+               person("Justin L", "Kern", role = "aut"))
 Description: Applying the family of the Bayesian Expectation-Maximization
 License: GPL (>= 2)
 Depends: R (>= 3.5.0)
 NeedsCompilation: no
 Encoding: UTF-8
+Author: Juan Luis Legorreta [aut, cre]
 Language: en-US
 Suggests: IRTBEMM
 Packaged: 2026-01-01 09:22:42 UTC;
