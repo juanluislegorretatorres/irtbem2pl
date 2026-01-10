@@ -1,11 +1,12 @@
 Package: irtbem2pl
-Title: Marginalized Bayesian Item Parameter Estimation, 2PL model TRI
+Title: Marginalized Bayesian Item Parameter Estimation, 2PL Model IRT
 Version: 1.0.0
 Authors@R: 
-    c(person("Juan Luis", "legorreta", , "jlegorreta2002@yahoo.com.mx", role = c("aut", "cre"), comment = c(ORCID = "YOUR-ORCID-ID")),
-               person("Shaoyang", "Guo", role =  "aut"),
-               person("Chanjin", "Zheng", role = "aut"),
-               person("Justin L", "Kern", role = "aut"))
+    c(person("Juan Luis", "legorreta",role = c("aut","cre"), 
+	 email = "jlegorreta2002@yahoo.com.mx"), 
+      person("Shaoyang", "Guo", role =  "aut"),
+      person("Chanjin", "Zheng", role = "aut"),
+      person("Justin L", "Kern", role = "aut"))
 Description: Applying the family of the Bayesian Expectation-Maximization
 License: GPL (>= 2)
 URL: https://github.com/juanluislegorretatorres/irtbem2pl
@@ -13,8 +14,17 @@ Depends: R (>= 3.5.0)
 Imports: IRTBEMM
 NeedsCompilation: no
 Encoding: UTF-8
-Author: Juan Luis Legorreta [aut, cre]
+Author: Juan Luis Legorreta [aut, cre],
+	Shaoyang Guo [aut],
+  	Chanjin Zheng [aut],
+  	Justin L Kern [aut]
 Language: en-US
+Suggests: IRTBEMM
+Packaged: 2026-01-01 09:22:42 UTC;
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+
+
 Suggests: IRTBEMM
 Packaged: 2026-01-01 09:22:42 UTC;
 Roxygen: list(markdown = TRUE)
