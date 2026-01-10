@@ -1,6 +1,6 @@
 .onAttach <- function(libname, irtbem2pl) {
-  packageStartupMessage("¡Hola! Gracias por usar mi librería ", irtbem2pl, ".")
-  packageStartupMessage("Esta es la versión alfa", packageVersion(irtbem2pl), ".")
+  packageStartupMessage("¡Hello! Thank you for using my library ", irtbem2pl, ".")
+  packageStartupMessage("This is the alpha version", packageVersion(irtbem2pl), ".")
   packageStartupMessage("data: A matrix or data.frame consists of dichotomous data
   (1 for correct and 0 for wrong response)")
   packageStartupMessage("Usage:")
@@ -9,3 +9,4 @@
   n.decimal = 5L,  n.Quadpts = 50L,  Theta.lim = c(-4, 4),  Missing = -9,
   ParConstraint = F,   BiasSE = F,  D = 1) ")
 }
+
