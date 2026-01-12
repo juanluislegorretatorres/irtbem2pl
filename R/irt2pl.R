@@ -64,8 +64,8 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
         }
 
         if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
-          lb1 = -lb1 #- ((bt0 - Prior$PriorB[j])/Prior$PriorB[j + J])
-          lbb = lbb #+ 1/Prior$PriorB[j + J]
+          lb1 = -lb1
+          lbb = lbb
         }
         Weight = laa * lbb - lab * lab #Dm
 
@@ -263,8 +263,8 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
               }
 
               if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
-                lb1 = -lb1 #- ((bt0 - Prior$PriorB[j])/Prior$PriorB[j + J])
-                lbb = lbb #+ 1/Prior$PriorB[j + J]
+                lb1 = -lb1
+                lbb = lbb
               }
               Weight = laa * lbb - lab * lab #Dm
 
@@ -287,16 +287,11 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
                 M.exit = 1L
               }
 
-              #     if (sqrt((at1 - log(at0))^2 + (bt1 - bt0)^2) < 0.01) {
-              #      M.exit = 1L
-              #       at0 = exp(at1)
-              #       bt0 = bt1
-              #     }
-              #     else {
+
               at0 = exp(at1)
               bt0 = bt1
               n.MCycle = n.MCycle + 1
-              #    }
+
             }
             if (is.finite(at0) && is.finite(bt0)) {
               if (ParConstraint) {

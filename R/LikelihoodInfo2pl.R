@@ -4,19 +4,17 @@
 #' Maximum-likelihood fitting of univariate distributions,
 #' allowing parameters to be held fixed if desired
 #' @param data.siple Data frame con la base
-#' @param CountNum ..
+#' @param CountNum number of items
 #' @param Model Two parameter logistic (2PL) model
 #' @param Par.est0 A list that consists of item parameters for each item
 #' based on the given model. For 2PL model, list(A, B)
 #' @param n.Quadpts  A single integer, refers to number of quadrature points
 #' per dimension
-#' @param node.Quadpts ..
-#' @param weight.Quadpts ..
+#' @param node.Quadpts quadrature pointsper dimension.
+#' @param weight.Quadpts quadrature points per dimension
 #' @param D the scaling constant.  By default 1 normal or 1.702 log.
 #'
-#' @seealso \code{\link{Input.Checking}}, \code{\link{BEMM.3PL}},
-#'  \code{\link{BEMM.1PLG}}, \code{\link{Prob.model}}
-#
+
 
 LikelihoodInfo2pl<-function (data.simple, CountNum, Model, Par.est0, n.Quadpts,
           node.Quadpts, weight.Quadpts, D)

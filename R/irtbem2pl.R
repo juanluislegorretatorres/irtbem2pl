@@ -42,8 +42,7 @@
 #' @param Missing A single number (numeric) to indicate which elements are missing;
 #' default is -9. The Missing cannot be 0 or 1.
 #' @param ParConstraint A logical value to indicate whether estimates
-#' parametes in a reasonable range; default is FALSE. If ParConstraint=TRUE:
-#' a in [0.001, 6], b in [-6, 6], c in [0.0001, 0.5].
+#' parametes in a reasonable range; default is FALSE.
 #' @param BiasSE A logical value to determine whether directly estimating
 #' SEs from inversed Hession matrix rather than USEM method, default is FALSE
 #' @param D the scaling constant 1 normal or 1.702 log.
@@ -94,10 +93,9 @@
 #' @seealso \code{\link{Input.Checking}}, \code{\link{BEMM.3PL}},
 #' \code{\link{BEMM.1PLG}}, \code{\link{Prob.model}}
 #'
-#'
 #' @export irtbem2pl
 #' @examples
-#'data(dat01)
+#' data(dat01)
 #' library(irtbem2pl)
 #'  mod_2PL<-irtbem2pl(dat01)
 #'
