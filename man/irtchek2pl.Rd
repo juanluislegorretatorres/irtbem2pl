@@ -9,7 +9,6 @@ irtchek2pl(
   data,
   PriorA = c(0, 0.25),
   PriorB = c(0, 4),
-  PriorS = c(4, 16),
   InitialA = 1,
   InitialB = 0,
   Tol = 0.01,
@@ -82,8 +81,7 @@ integration grid for each dimension; default is c(-4, 4).}
 default is -9. The Missing cannot be 0 or 1.}
 
 \item{ParConstraint}{A logical value to indicate whether estimates
-parametes in a reasonable range; default is FALSE. If ParConstraint=TRUE:
-a in \link{0.001, 6}, b in \link{-6, 6}, c in \link{0.0001, 0.5}.}
+parametes in a reasonable range; default is FALSE.}
 
 \item{BiasSE}{A logical value to determine whether directly estimating
 SEs from inversed Hession matrix rather than USEM method, default is FALSE}
@@ -113,10 +111,6 @@ library(irtbem2pl)
 Second Edition, Revised and Expanded Frank B. Baker University ofWisconsin
 Madison, Wisconsin, U.S.A. Seock-Ho Kim The University ofGeorgia
 Athens, Georgia, u.S.A.
-}
-\seealso{
-\code{\link{Input.Checking}}, \code{\link{BEMM.3PL}},
-\code{\link{BEMM.1PLG}}, \code{\link{Prob.model}}
 }
 \author{
 Juan Luis Legorreta Torres \email{jlegorreta2002@yahoo.com.mx}

@@ -70,8 +70,7 @@ integration grid for each dimension; default is c(-4, 4).}
 default is -9. The Missing cannot be 0 or 1.}
 
 \item{ParConstraint}{A logical value to indicate whether estimates
-parametes in a reasonable range; default is FALSE. If ParConstraint=TRUE:
-a in \link{0.001, 6}, b in \link{-6, 6}, c in \link{0.0001, 0.5}.}
+parametes in a reasonable range; default is FALSE.}
 
 \item{BiasSE}{A logical value to determine whether directly estimating
 SEs from inversed Hession matrix rather than USEM method, default is FALSE}

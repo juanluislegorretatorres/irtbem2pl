@@ -16,7 +16,7 @@ LikelihoodInfo2pl(
 )
 }
 \arguments{
-\item{CountNum}{..}
+\item{CountNum}{number of items}
 
 \item{Model}{Two parameter logistic (2PL) model}
 
@@ -26,9 +26,9 @@ based on the given model. For 2PL model, list(A, B)}
 \item{n.Quadpts}{A single integer, refers to number of quadrature points
 per dimension}
 
-\item{node.Quadpts}{..}
+\item{node.Quadpts}{quadrature pointsper dimension.}
 
-\item{weight.Quadpts}{..}
+\item{weight.Quadpts}{quadrature points per dimension}
 
 \item{D}{the scaling constant.  By default 1 normal or 1.702 log.}
 
@@ -39,8 +39,4 @@ per dimension}
 it is to observe a data outcome given a set of model parameters.
 Maximum-likelihood fitting of univariate distributions,
 allowing parameters to be held fixed if desired
-}
-\seealso{
-\code{\link{Input.Checking}}, \code{\link{BEMM.3PL}},
-\code{\link{BEMM.1PLG}}, \code{\link{Prob.model}}
 }
