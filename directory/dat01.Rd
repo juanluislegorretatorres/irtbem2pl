@@ -31,13 +31,7 @@
     \item{\code{ITEM020}}{a numeric vector}
     \item{\code{ITEM021}}{a numeric vector}
     \item{\code{ITEM023}}{a numeric vector}
-    \item{\code{ITEM024}}{a numeric vector}
-    \item{\code{ITEM025}}{a numeric vector}
-    \item{\code{ITEM026}}{a numeric vector}
-    \item{\code{ITEM027}}{a numeric vector}
-    \item{\code{ITEM028}}{a numeric vector}
-    \item{\code{ITEM029}}{a numeric vector}
-    \item{\code{ITEM030}}{a numeric vector}
+
   }
 }
 \details{
@@ -54,3 +48,4 @@ data(dat01)
 ## maybe str(dat01) ; plot(dat01) ...
 }
 \keyword{datasets}
+
