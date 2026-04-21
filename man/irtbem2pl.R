@@ -1,42 +1,39 @@
 #' @title Calibrating 2PL model via (a,b), proposed by Birnbaum
 #' (1968). Adjustment with Marginal Bayesian Modal Item Parameter Estimation.
 #' @description  This function can estimate the item parameters of the 2PL model
-#' via  Bayesian statistical methodology include Cornfield
-#' (1969),  Finetti (1974), Edwards, Lindman, and Savage (1963), Lindley
-#' (1970a, 1970b, 1971), and Novick and Jackson (1974). Examples of the use
-#' of these methods in educational settings can be found in Novick and Jackson
-#' (1974), Novick, Jackson, Thayer, and Cole (1972), and Rubin (1980). Lord
-#' (1986) compared maximum likelihood and Bayesian estimation methods in
-#' IRT.
+#' using Bayesian statistics. The results are similar to those of BILOG MG,
+#' from the book "Item Response Theory Parameter Estimation Techniques".
 #'@param data A matrix or data.frame consists of dichotomous data
 #' (1 for correct and 0 for wrong response)
-#' @param PriorA The user specified logarithmic normal distribution prior for item
-#' discrimation (a) parameters in the 2PL models.
-#' A numeric with two hyperparameters
-#' mean and variance of logarithmic normal distribution for all a parameters.
-#' By default, PriorA=c(0,0.25), which means a log normal prior of mean=0 and
-#' variance=0.25 will be used for all item discrimation parameters.
-#' @param PriorB The user specified normal distribution prior for item difficulty (b)
-#' parameters in the 2PL models.
+#' @param PriorA A numeric value with two hyperparameters:
+#' the mean and variance of the log-normal distribution for all a parameters.
+#' By default, PriorA = c(0, 0.25), which means that a prior log-normal
+#' distribution with mean = 0 and variance = 0.25 will be used for all
+#' item discrimination parameters. Internally, in extreme cases,
+#' PriorA = c(1, exp(0.5)) is used, where exp(0.5) = 1.6487212181091309
+#' @param PriorB The user specified normal distribution prior for item
+#' difficulty (b) #' parameters in the 2PL models.
 #' A numeric with two hyperparameters mean and variance of normal distribution for
 #' all b parameters. By default, PriorB=c(0,4), which means a normal prior of
 #'  mean=0 and variance=4 will be used for all item difficulty parameters.
-#' @param InitialA The user specified starting values for item discrimation (a)
-#' parameters in the 2PL model. A 1 (default), single number (numeric), refers to set t
-#' his number to be the starting values of a for all items
-#' @param InitialB The user specified starting values for item difficulty (b)
-#'  parameters in the 2PL model. A 0 (default), single number (numeric),
-#'  refers to set this number to be the starting values of b for all items.
+#' @param InitialA The user specifies initial values for the item discrimination
+#' parameters (a) in the 2PL model. It is suggested to use the TC parameters.
+#' A single (numeric) number, or 1 (default value), refers to the set of initial
+#'  values for a for all items.
+#' @param InitialB The user specified initial values for the difficulty
+#' parameter (b) in the 2PL model. It is suggested to use TC values. The default
+#' value is 0 (a single number). This parameter indicates that this number will
+#' be the initial value of b for all items.
 #' @param Tol A single number (numeric), refers to convergence threshold
 #' for E-step cycles; defaults are 0.01.
 #' @param max.ECycle A single integer, refers to maximum number of E-step cycles;
-#' defaults are 100L.
+#' defaults are 50L.
 #' @param max.MCycle A single integer, refers to maximum number of M-step
-#' cycles; defaults are 3L.
+#' cycles; defaults are 10L.
 #' @param n.Quadpts A single integer, refers to number of quadrature points
 #' per dimension (must be larger than 5); defaults are 50L.
 #' @param n.decimal A single integer, refers to number of decimal places when o
-#' utputs results. defaults are 5L.
+#' utputs results defaults are 6L.
 #' @param Theta.lim A numeric with two number, refers to the range of
 #' integration grid for each dimension; default is c(-4, 4).
 #' @param Missing A single number (numeric) to indicate which elements are missing;
@@ -45,7 +42,7 @@
 #' parametes in a reasonable range; default is FALSE.
 #' @param BiasSE A logical value to determine whether directly estimating
 #' SEs from inversed Hession matrix rather than USEM method, default is FALSE
-#' @param D the scaling constant 1 normal or 1.702 log.
+#' @param D The scale constant is 1 or 1.702. The default value is 1
 #'
 #' @details Two parameter logistic (2pl) model proposed by Birnbaum (1968):
 #'
@@ -94,28 +91,35 @@
 #' @examples
 #' data(dat01)
 #' library(irtbem2pl)
-#'  mod_2PL<-irtbem2pl(dat01)
+#'
+#' #Use preferably
+#' #InitialA =Biserial_point (theory classic items)
+#' #InitialB =Difcultad (theory classic items)
+#'
+#'  mod_2PL<-irtbem2pl(data=dat01,PriorA = c(0, 0.25),PriorB = c(0, 4),
+#'  InitialA =1, InitialB =0,Tol = 0.01,max.ECycle = 50L,max.MCycle = 10L,
+#'  n.decimal = 5L ,n.Quadpts = 50L,Theta.lim = c(-4, 4),Missing = -9,
+#'  ParConstraint = F,BiasSE = F,D=1)
 #'
 #'  mod_2PL$Est.ItemPars       #show item estimates
 #'  mod_2PL$Est.Theta          #show ability estimates
 #'
+#'
 irtbem2pl<-function (data,PriorA = c(0, 0.25), PriorB = c(0, 4), InitialA = 1,
-                InitialB = 0, Tol = 0.01, max.ECycle = 100L, max.MCycle = 3L,
-                n.decimal = 5L, n.Quadpts = 50L,  Theta.lim = c(-4, 4),
-                Missing = -9, ParConstraint = F, BiasSE = F, D = 1)
+                     InitialB = 0, Tol = 0.01, max.ECycle = 50L, max.MCycle = 10L,
+                     n.decimal = 5L, n.Quadpts = 50L,  Theta.lim = c(-4, 4),
+                     Missing = -9, ParConstraint = F, BiasSE = F, D = 1)
 {
-
-
   Time.Begin = Sys.time()
   Model = "2PL"
   Check.results = irtchek2pl(Model = Model, data = data,
-             PriorA = PriorA, PriorB = PriorB,
-             InitialA = InitialA, InitialB = InitialB,
-             Tol = Tol, max.ECycle = max.ECycle,
-             max.MCycle = max.MCycle, n.Quadpts = n.Quadpts,
-             n.decimal = n.decimal, Theta.lim = Theta.lim,
-             Missing = Missing, ParConstraint = ParConstraint,
-             BiasSE = BiasSE, D = D)
+                             PriorA = PriorA, PriorB = PriorB,
+                             InitialA = InitialA, InitialB = InitialB,
+                             Tol = Tol, max.ECycle = max.ECycle,
+                             max.MCycle = max.MCycle, n.Quadpts = n.Quadpts,
+                             n.decimal = n.decimal, Theta.lim = Theta.lim,
+                             Missing = Missing, ParConstraint = ParConstraint,
+                             BiasSE = BiasSE, D = D)
   data = Check.results$data
   data.simple = Check.results$data.simple
   CountNum = Check.results$CountNum
@@ -135,7 +139,7 @@ irtbem2pl<-function (data,PriorA = c(0, 0.25), PriorB = c(0, 4), InitialA = 1,
   BiasSE = Check.results$BiasSE
   Par.est0 = list(A = InitialA, B = InitialB)
   Par.SE0 = list(SEA = InitialA * 0, SEB = InitialB * 0)
-  np = J * 3
+  np = J *2
   D = Check.results$D
 
   Est.results = irt2pl(Model = Model, data = data, data.simple = data.simple,
@@ -196,8 +200,5 @@ irtbem2pl<-function (data,PriorA = c(0, 0.25), PriorB = c(0, 4), InitialA = 1,
           ", p = ", round(Est.results$fits.test$G2.P, n.decimal),
           ", G2/df = ", round(Est.results$fits.test$G2.ratio,
                               n.decimal), sep = "")
-
-
-
   return(Est.results)
 }
