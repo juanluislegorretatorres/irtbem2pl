@@ -1,4 +1,4 @@
-irt2pl = function (Model = Model, data = data, data.simple = data.simple,
+irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
                   CountNum = CountNum, n.class = n.class, Prior = Prior,
                   Par.est0 = Par.est0, Par.SE0 = Par.SE0, D = D, np, Tol = Tol,
                   max.ECycle = max.ECycle, max.MCycle = max.MCycle, n.Quadpts = n.Quadpts,
@@ -22,14 +22,42 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
   n.ECycle = 1L
   StopNormal = 0L
   E.exit = 0L
+  LH0 = 0L
+  f = 0L
+  r = 0L
+  fz = 0L
+  rz = 0L
+
   LLinfo = LikelihoodInfo2pl(data.simple, CountNum, Model, Par.est0,
                              n.Quadpts, node.Quadpts, weight.Quadpts, D)
   LH0 = LLinfo$LH
   f = LLinfo$f
-  r = LLinfo$r
   fz = LLinfo$fz
   rz = LLinfo$rz
+  Deviance_actual <- LLinfo$Deviance
+  cr_old <- 0
+  accel = 1.0  # Parameter Estimation Techniques: By default, it does not accelerate
+  cr=0
+  prop_aciertos <- colMeans(data.simple, na.rm = TRUE)
   while (E.exit == 0L && (n.ECycle <= max.ECycle)) {
+    # Dynamic damping factor
+    if (n.ECycle <=3) {
+      # Cycle 1: Very cautious, short steps (Parameter Estimation Techniques)
+      damping = 0.50
+      limit   = 0.25 #.20
+      accel   = 0.1
+    } else {
+      damping = 1.25    #  Release the brake
+      limit   = 0.50   #BILOG standard limit for stability
+      # Ramsey: Only if there is monotonic convergence (the error decreases)
+      if (cr < cr_old && cr_old > 0) {
+        ratio = cr / cr_old
+        accel = min(1 / (1 - ratio), 1.6) #  allows up to 1.6
+      } else {
+        accel = 1.0 # If the error increased, don't accelerate or it will become unstable.
+      }
+    }
+    cr_old <- cr # Update for the next cycle E
     for (j in 1:J) {
       at0 = Par.est0$A[j]
       bt0 = Par.est0$B[j]
@@ -49,59 +77,70 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
         x.bt = node.Quadpts - bt0
         x.bt2 = x.bt * x.bt
         pstar = 1/(1 + exp(-Da * x.bt))
+        # Use approximately this limit for data stability
+        pstar <- pmin(pmax(pstar, 0.00001), 0.99999)
         psf = pstar * f
         wsf = psf * (1 - pstar)  #w
         fz.psf = fz[j, ] - psf
-        la1 = Da * sum(fz.psf * x.bt)
-        lb1 = Da * sum(fz.psf)
-        laa = D2a2 * sum(wsf * x.bt2)
-        lbb = D2a2 * sum(wsf)
-        lab = -D2a2 * sum(wsf * x.bt)
-
+        idx <- wsf >= 0.0000009
+        # 2. Operate only with filtered elements
+        la1 <- Da   * sum(fz.psf[idx] * x.bt[idx])#L1
+        lb1 <- Da   * sum(fz.psf[idx])
+        laa <- D2a2 * sum(wsf[idx] * x.bt2[idx])#L11
+        lbb <- D2a2 * sum(wsf[idx])
+        lab <- -D2a2 * sum(wsf[idx] * x.bt[idx])#L12
+        # 1. Gradients and Hessians of the data (Likelihood)
+        # (You already calculated la1, lb1, laa, lbb, lab based on fz and rz)
         if (Prior$PriorA[j] != -9 && Prior$PriorA[j + J] != -9) {
           la1 = la1 - ((log(at0) - Prior$PriorA[j])/Prior$PriorA[j + J])
           laa = laa + 1/Prior$PriorA[j + J]
         }
-
-        if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
-          lb1 = -lb1
-          lbb = lbb
+        if (prop_aciertos[j] < 0.05 || prop_aciertos[j] > 0.95) {
+           if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
+            lb1 = -lb1 - ((bt0 - Prior$PriorB[j])/Prior$PriorB[j + J])
+            lbb = lbb + 1/Prior$PriorB[j + J]
+          }
+          cat(sprintf("Item %d detected as extreme (p=%.3f).
+                          Prior B enabled for stability.\n", j, prop_aciertos[j]))
+        } else {
+          if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
+            lb1 = -lb1
+            lbb = lbb
+          }
         }
         Weight = laa * lbb - lab * lab #Dm
-
-        if (Weight <=0.000099){
+        if (Weight <= 0.000099){
           M.exit = 1L
-          at0 = exp(at1)
-        }
-
+          at0 = exp(log(at0))}
+        DA=(la1*lbb-lb1*lab)/Weight
+        DB=(-la1*lab+lb1*laa)/Weight
+        # We'll save the current improvement for the next cycle
+# --- 2. Apply BOTH at the same time --
+        DA = DA * damping * accel
+        DB = DB * damping * accel
+ # --- 3. Limit to prevent exceeding the limit (Clipping) ---
+        # limit = if(n.ECycle < 3) 0.2 else 0.5
+        DA = pmin(pmax(DA, -limit), limit)
+        DB = pmin(pmax(DB, -limit), limit)
+        at1 = log(max(at0, 0.001)) + DA
+        bt1 = bt0 + DB
         Iaa = lbb/Weight
         Ibb = laa/Weight
         Iab = lab/Weight
-
-        at1 = log(at0) + (Iaa * la1 - Iab * lb1)
-        bt1 = bt0 + (Ibb * lb1 - Iab * la1)
-
         if (abs(at1)>30 | abs(bt1)>20 ) {
           M.exit = 1L
-
         }
         if (abs(at1)<=0.05 & abs(bt1)<=0.05 ) {
           M.exit = 1L
-
         }
-
-
         at0 = exp(at1)
         bt0 = bt1
         n.MCycle = n.MCycle + 1
-        # }
-
       }
-
       if (is.finite(at0) && is.finite(bt0)
       ) {
         if (ParConstraint) {
-          if (at0 >= 0.0001 && at0 <= 6 && bt0 >= -6 &&
+          if (at0 >= 0.001 && at0 <= 6 && bt0 >= -6 &&
               bt0 <= 6) {
             Par.est0$A[j] = at0
             Par.est0$B[j] = bt0
@@ -111,10 +150,9 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
             IB[j] = Ibb
             IAB[j] = Iab
           }
-
         }
         else {
-          if (at0 >= 0.0001) {
+          if (at0 >= 0.001) {
             Par.est0$A[j] = at0
             TA[n.ECycle, j] = at0
           }
@@ -124,7 +162,6 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
             } else {
               TA[n.ECycle, j] = at0
             }
-
           }
           Par.est0$B[j] = bt0
           TB[n.ECycle, j] = bt0
@@ -137,34 +174,60 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
         if (n.ECycle != 1) {
           TA[n.ECycle, j] = TA[n.ECycle - 1, j]
           TB[n.ECycle, j] = TB[n.ECycle - 1, j]
-
         }
         else {
           TA[n.ECycle, j] = Par.est0$A[j]
           TB[n.ECycle, j] = Par.est0$B[j]
-
         }
       }
     }
-
-    LLinfo = LikelihoodInfo2pl(data.simple, CountNum, Model,
+    # --- 2. METRIC RE-SCALING (Identification) ---
+    #  does this BEFORE calculating the cycle likelihood
+    sum_f <- sum(f)
+    if (is.finite(sum_f) && sum_f > 1e-5) {
+      mu_theta <- sum(f * node.Quadpts) / sum_f
+      sd_theta <- sqrt(sum(f * (node.Quadpts - mu_theta)^2) / sum_f)
+       Par.est0$B <- (Par.est0$B - mu_theta) / sd_theta
+    #  This keeps the curve the same when changing the scale
+      Par.est0$A <- pmin(pmax(Par.est0$A * sd_theta, 0.01), 4.0)
+    # WEIGHT RESET: Key to eliminating hundredths of a percent differences
+    # Assumes standard normality at the start of each cycle
+      weight.Quadpts <- dnorm(node.Quadpts)
+      weight.Quadpts <- weight.Quadpts / sum(weight.Quadpts)
+    }
+    if (n.ECycle > 1) {
+      diff_A = abs(Par.est0$A - TA[n.ECycle - 1, ])
+      diff_B = abs(Par.est0$B - TB[n.ECycle - 1, ])
+      largest_change = max(max(diff_A), max(diff_B))
+      item_max = if(max(diff_A) > max(diff_B)) which.max(diff_A) else
+        which.max(diff_B)
+    } else {
+      largest_change = 0
+      item_max = 0
+    }
+   LLinfo = LikelihoodInfo2pl(data.simple, CountNum, Model,
                                Par.est0, n.Quadpts, node.Quadpts, weight.Quadpts,
                                D)
     LH[n.ECycle] = LLinfo$LH
     f = LLinfo$f
-    r = LLinfo$r
+
     fz = LLinfo$fz
     rz = LLinfo$rz
     cr = LH[n.ECycle] - LH0
     LH0 = LH[n.ECycle]
-
-    if (abs(cr) < Tol) {
+    Deviance_nueva <- LLinfo$Deviance
+    # --- 5. CONSOLE MONITOR
+    cat(sprintf("EM CYCLE: %3d |D: %12.4f | LL: %12.4f | LL-CH: %10.6f | MAX-CH: %8.5f (Item %d)\n",
+                n.ECycle, Deviance_actual , LH[n.ECycle], cr, largest_change, item_max))
+    if (abs(cr) < Tol )  {
       n.ECycle = n.ECycle + 1
       E.exit = 1
       StopNormal = 1L
     }
     else {
       n.ECycle = n.ECycle + 1
+      Deviance_actual <- Deviance_nueva
+      cr_old = cr
     }
   }
 
@@ -225,7 +288,6 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
                                      Model, deltahat, n.Quadpts, node.Quadpts,
                                      weight.Quadpts, D)
           f = LLinfo$f
-          r = LLinfo$r
           fz = LLinfo$fz
           rz = LLinfo$rz
           if (ParClass == 1 || ParClass == 2) {
@@ -239,39 +301,48 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
             if (abs(at0)<=0.05 & abs(bt0)<=0.05 ) {#
               M.exit = 1L
             }
-
             while (M.exit == 0 && (n.MCycle <= max.MCycle)) {
-
               Da = D * at0
               D2a2 = Da * Da
               x.bt = node.Quadpts - bt0
               x.bt2 = x.bt * x.bt
               pstar = 1/(1 + exp(-Da * x.bt))
+              # BILOG usa aproximadamente este límite para la estabilidad de la información
+              pstar <- pmin(pmax(pstar, 0.00001), 0.99999)
               psf = pstar * f
-              wsf = psf * (1 - pstar)
-              #wsf[wsf < 0.0000009] = 0
+              wsf = psf * (1 - pstar)  #w
               fz.psf = fz[j, ] - psf
-              la1 = Da * sum(fz.psf * x.bt)
-              lb1 = Da * sum(fz.psf)
-              laa = D2a2 * sum(wsf * x.bt2)
-              lbb = D2a2 * sum(wsf)
-              lab = -D2a2 * sum(wsf * x.bt)
-
+              # 2. Operate only with filtered elements
+              la1 <- Da   * sum(fz.psf[idx] * x.bt[idx])#L1
+              lb1 <- Da   * sum(fz.psf[idx])
+              laa <- D2a2 * sum(wsf[idx] * x.bt2[idx])#L11
+              lbb <- D2a2 * sum(wsf[idx])
+              lab <- -D2a2 * sum(wsf[idx] * x.bt[idx])#L12
+              # 1. Gradients and Hessians of the data (Likelihood)
+              # (You already calculated la1, lb1, laa, lbb, lab based on fz and rz)
               if (Prior$PriorA[j] != -9 && Prior$PriorA[j + J] != -9) {
                 la1 = la1 - ((log(at0) - Prior$PriorA[j])/Prior$PriorA[j + J])
                 laa = laa + 1/Prior$PriorA[j + J]
               }
+              if (prop_aciertos[j] < 0.05 || prop_aciertos[j] > 0.95) {
 
-              if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
-                lb1 = -lb1
-                lbb = lbb
+                if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
+                  lb1 = -lb1 - ((bt0 - Prior$PriorB[j])/Prior$PriorB[j + J])
+                  lbb = lbb + 1/Prior$PriorB[j + J]
+                }
+                cat(sprintf("Item %d detectado como extremo (p=%.3f). Prior B activada para estabilidad.\n", j, prop_aciertos[j]))
+
+              } else {
+
+                if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
+                  lb1 = -lb1#
+                  lbb = lbb #
+                }
               }
               Weight = laa * lbb - lab * lab #Dm
-
               if (Weight <=0.000099){
                 M.exit = 1L
               }
-
               Iaa = lbb/Weight
               Ibb = laa/Weight
               Iab = lab/Weight
@@ -286,23 +357,20 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
               if (abs(at1)<=0.05 & abs(bt1)<=0.05 ) {
                 M.exit = 1L
               }
-
-
-              at0 = exp(at1)
+        at0 = exp(at1)
               bt0 = bt1
               n.MCycle = n.MCycle + 1
-
             }
             if (is.finite(at0) && is.finite(bt0)) {
               if (ParConstraint) {
-                if (at0 >= 0.0001 && at0 <= 6 && bt0 >= -6 && bt0 <= 6)
+                if (at0 >= 0.001 && at0 <= 6 && bt0 >= -6 && bt0 <= 6)
                 {
                   deltahat$A[j] = at0
                   deltahat$B[j] = bt0
                 }
               }
               else {
-                if (at0 >= 0.0001) {
+                if (at0 >= 0.001) {
                   deltahat$A[j] = at0
                 }
                 else {
@@ -399,8 +467,7 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
       Par.SE0$SEA[j] = sqrt(Par.est0$A[j] * Par.est0$A[j] *
                               IA[j])
       Par.SE0$SEB[j] = sqrt(IB[j])
-      # Par.SE0$SEC[j] = sqrt(IC[j])
-    }
+     }
   }
 
   Par.est0$A = round(Par.est0$A, n.decimal)
@@ -415,11 +482,12 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
   P.Quadpts = lapply(as.list(node.Quadpts), Prob.model, Model = Model,
                      Par.est0 = Par.est0, D = D)
   Joint.prob = mapply("*", lapply(P.Quadpts, function(P, data) {
-    apply(data * P + (1 - data) * (1 - P), 2, prod, na.rm = T)
+    apply(data * P + (1 - data) * (1 - P)+ 1e-20, 2, prod, na.rm = T)
   }, data = t(data)), as.list(weight.Quadpts), SIMPLIFY = FALSE)
   Whole.prob = Reduce("+", Joint.prob)
   LogL = sum(log(Whole.prob))
   Posterior.prob = lapply(Joint.prob, "/", Whole.prob)
+
   EAP.JP = simplify2array(Joint.prob)
   EAP.Theta = rowSums(matrix(1, I, 1) %*% node.Quadpts * EAP.JP)/rowSums(EAP.JP)
   EAP.WP = EAP.JP * simplify2array(lapply(as.list(node.Quadpts),
@@ -507,13 +575,15 @@ irt2pl = function (Model = Model, data = data, data.simple = data.simple,
                                                    units = "auto"),
                                           digits = 4)), "secs")
 
-
-  return(list(Est.ItemPars = Est.ItemPars, Est.Theta = Est.Theta,
+    return(list(Est.ItemPars = Est.ItemPars, Est.Theta = Est.Theta,
                     Loglikelihood = LogL, Iteration = n.ECycle, EM.Map = EM.Map,
                     fits.test = fits.test, Elapsed.time = Elapsed.time,
                     StopNormal = StopNormal, InitialValues = InitialValues,
                     cr = cr))
 
 }
+
+
+
 
 
