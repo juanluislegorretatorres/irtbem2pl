@@ -6,7 +6,10 @@ Prob.model<-function (X, Model, Par.est0, D = 1)
       Prob = 1/(1 + exp(-(X - Par.est0$B)))
     }
     if (Model == "2PL") {
-      Prob = 1/(1 + exp(-D * Par.est0$A * (X - Par.est0$B)))
+      exponent <- -D * Par.est0$A * (X - Par.est0$B)
+      # Limiting the exponent between -50 and 50 avoids errors of Inf or absolute 0
+      exponent <- pmin(pmax(exponent, -50), 50)
+      Prob = 1 / (1 + exp(exponent))
     }
     if (Model == "3PL") {
       Prob = Par.est0$C + (1 - Par.est0$C)/(1 + exp(-D *
@@ -26,12 +29,12 @@ Prob.model<-function (X, Model, Par.est0, D = 1)
       P.g = 1/(1 + exp(-(Par.est0$Gamma)))
       Prob = P.1pl + (1 - P.1pl) * P.g
     }
-    Prob[Prob >= 0.9999] = 0.9999
-    Prob[Prob < 1e-04] = 1e-04
-
+    Prob <- pmin(pmax(Prob, 1e-12), 1 - 1e-12)
     return(Prob)
   }
   else {
     stop("The Model user specified does not exist!")
   }
 }
+
+
