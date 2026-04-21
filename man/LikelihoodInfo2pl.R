@@ -53,5 +53,4 @@ LikelihoodInfo2pl<-function (data.simple, CountNum, Model, Par.est0, n.Quadpts,
                              colSums, na.rm = T))
   rz = simplify2array(lapply(lapply(lapply(EZ.core, "*", t(data.simple)),
                                     "*", CountNum), colSums, na.rm = T))
-  return(list(LH = LH, f = f, r = r, fz = fz, rz = rz))
-}
+  return(list(LH = LH, Deviance=-2 * LH, f = f, fz = fz, rz = rz))
