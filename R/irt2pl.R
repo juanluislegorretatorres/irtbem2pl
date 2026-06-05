@@ -1,3 +1,35 @@
+#' Estimation of the 2PL Model via Marginal Bayesian Modal Estimation
+#'
+#' Estimates item discrimination and difficulty parameters for the
+#' two-parameter logistic (2PL) model using an Expectation-Maximization
+#' (EM) algorithm with Bayesian priors.
+#'
+#' @param Model An object specifying the IRT model configuration.
+#' @param data A data frame or matrix containing the raw response data.
+#' @param data.simple A simplified or matrix version of the response data.
+#' @param CountNum A numeric vector indicating the frequency of each response pattern.
+#' @param n.class An integer specifying the number of latent classes or groups.
+#' @param Prior A list containing the prior distributions for parameters A and B.
+#' @param Par.est0 A list with the initial parameter estimates for the items.
+#' @param Par.SE0 A list with the initial standard error estimates.
+#' @param D A numeric scaling constant (typically 1.7 or 1.0).
+#' @param np An integer representing the number of items or parameters.
+#' @param Tol A numeric value specifying the convergence tolerance limit.
+#' @param max.ECycle An integer indicating the maximum number of E-steps.
+#' @param max.MCycle An integer indicating the maximum number of M-steps.
+#' @param n.Quadpts An integer specifying the number of quadrature points.
+#' @param n.decimal An integer for decimal formatting in output objects.
+#' @param Theta.lim A numeric vector of length 2 defining the boundaries of theta.
+#' @param Missing A value or matrix specifying how missing data is handled.
+#' @param ParConstraint A logical value indicating if parameter constraints are applied.
+#' @param BiasSE A logical value specifying if bias-corrected standard errors are computed.
+#' @param I An integer representing the total number of examinees.
+#' @param J An integer representing the total number of items.
+#' @param Time.Begin A POSIXct timestamp marking the start of the execution.
+#'
+#' @return A list containing the calibrated item parameters, information matrices,
+#'     and convergence metadata.
+#' @export
 irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
                   CountNum = CountNum, n.class = n.class, Prior = Prior,
                   Par.est0 = Par.est0, Par.SE0 = Par.SE0, D = D, np, Tol = Tol,
@@ -7,7 +39,7 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
                   J = J, Time.Begin = Time.Begin)
 {
   node.Quadpts = seq(Theta.lim[1], Theta.lim[2], length.out = n.Quadpts)
-  weight.Quadpts = dnorm(node.Quadpts, 0, 1, log = F)
+  weight.Quadpts = dnorm(node.Quadpts, 0, 1, log = FALSE)
   weight.Quadpts = weight.Quadpts/sum(weight.Quadpts)
   InitialValues = Par.est0
   LH = rep(0, max.ECycle)
@@ -48,7 +80,7 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
       accel   = 0.1
     } else {
       damping = 1.25    #  Release the brake
-      limit   = 0.50   #BILOG standard limit for stability
+      limit   = 0.50   #BILOG-MG standard limit for stability
       # Ramsey: Only if there is monotonic convergence (the error decreases)
       if (cr < cr_old && cr_old > 0) {
         ratio = cr / cr_old
@@ -100,8 +132,8 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
             lb1 = -lb1 - ((bt0 - Prior$PriorB[j])/Prior$PriorB[j + J])
             lbb = lbb + 1/Prior$PriorB[j + J]
           }
-          cat(sprintf("Item %d detected as extreme (p=%.3f).
-                          Prior B enabled for stability.\n", j, prop_aciertos[j]))
+          message(sprintf("Item %d detected as extreme (p=%.3f).
+                          Prior B enabled for stability.", j, prop_aciertos[j]))
         } else {
           if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
             lb1 = -lb1
@@ -217,8 +249,9 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
     LH0 = LH[n.ECycle]
     Deviance_nueva <- LLinfo$Deviance
     # --- 5. CONSOLE MONITOR
-    cat(sprintf("EM CYCLE: %3d |D: %12.4f | LL: %12.4f | LL-CH: %10.6f | MAX-CH: %8.5f (Item %d)\n",
+    message(sprintf("EM CYCLE: %3d |D: %12.4f | LL: %12.4f | LL-CH: %10.6f | MAX-CH: %8.5f (Item %d)",
                 n.ECycle, Deviance_actual , LH[n.ECycle], cr, largest_change, item_max))
+
     if (abs(cr) < Tol )  {
       n.ECycle = n.ECycle + 1
       E.exit = 1
@@ -257,8 +290,7 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
     Time.Mid = Sys.time()
     message(paste("Estimating SEs via USEM algorithm (Requires about ",
                   as.character(round(difftime(Time.Mid, Time.Begin,
-                                              units = "auto"), 2)), " secs).", sep = ""),
-            "\n")
+                                              units = "auto"), 2)), " secs).", sep = ""))
     for (j in 1:J) {
       z = start.SEM
       SEM.exit = 0
@@ -307,7 +339,7 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
               x.bt = node.Quadpts - bt0
               x.bt2 = x.bt * x.bt
               pstar = 1/(1 + exp(-Da * x.bt))
-              # BILOG usa aproximadamente este límite para la estabilidad de la información
+              # BILOG-MG usa aproximadamente este límite para la estabilidad de la información
               pstar <- pmin(pmax(pstar, 0.00001), 0.99999)
               psf = pstar * f
               wsf = psf * (1 - pstar)  #w
@@ -330,9 +362,8 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
                   lb1 = -lb1 - ((bt0 - Prior$PriorB[j])/Prior$PriorB[j + J])
                   lbb = lbb + 1/Prior$PriorB[j + J]
                 }
-                cat(sprintf("Item %d detectado como extremo (p=%.3f). Prior B activada para estabilidad.\n", j, prop_aciertos[j]))
-
-              } else {
+                message(sprintf("Item %d detected as extreme (p=%.3f). Prior B enabled for stability.", j, prop_aciertos[j]))
+                } else {
 
                 if (Prior$PriorB[j] != -9 && Prior$PriorB[j + J] != -9) {
                   lb1 = -lb1#
@@ -426,19 +457,19 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
       delta1[3] = -delta[3]/Weight
       delta1[4] = delta[1]/Weight
       delta1[5] = 1/delta[5]
-      if (is.finite(delta1[1]) == F || delta1[1] <= 0) {
+      if (is.finite(delta1[1]) == FALSE || delta1[1] <= 0) {
         delta1[1] = 1
       }
-      if (is.finite(delta1[2]) == F || delta1[2] <= 0) {
+      if (is.finite(delta1[2]) == FALSE || delta1[2] <= 0) {
         delta1[2] = 0
       }
-      if (is.finite(delta1[3]) == F || delta1[3] <= 0) {
+      if (is.finite(delta1[3]) == FALSE || delta1[3] <= 0) {
         delta1[3] = 0
       }
-      if (is.finite(delta1[4]) == F || delta1[4] <= 0) {
+      if (is.finite(delta1[4]) == FALSE || delta1[4] <= 0) {
         delta1[4] = 1
       }
-      if (is.finite(delta1[5]) == F || delta1[5] <= 0) {
+      if (is.finite(delta1[5]) == FALSE || delta1[5] <= 0) {
         delta1[5] = 1
       }
       Par.SE0$SEA[j] = sqrt(Par.est0$A[j] * Par.est0$A[j] *
@@ -461,8 +492,7 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
     }
   }
   else {
-    message("Directly estimating SEs from inversed Hession matrix.",
-            "\n")
+    message("Directly estimating SEs from inversed Hessian matrix.")
     for (j in 1:J) {
       Par.SE0$SEA[j] = sqrt(Par.est0$A[j] * Par.est0$A[j] *
                               IA[j])
@@ -482,7 +512,7 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
   P.Quadpts = lapply(as.list(node.Quadpts), Prob.model, Model = Model,
                      Par.est0 = Par.est0, D = D)
   Joint.prob = mapply("*", lapply(P.Quadpts, function(P, data) {
-    apply(data * P + (1 - data) * (1 - P)+ 1e-20, 2, prod, na.rm = T)
+    apply(data * P + (1 - data) * (1 - P)+ 1e-20, 2, prod, na.rm = TRUE)
   }, data = t(data)), as.list(weight.Quadpts), SIMPLIFY = FALSE)
   Whole.prob = Reduce("+", Joint.prob)
   LogL = sum(log(Whole.prob))
@@ -557,8 +587,8 @@ irt2pl<-function (Model = Model, data = data, data.simple = data.simple,
       G2.item[k, ] = nrow(data.group) * (Obs.P * Odds1 +
                                            (1 - Obs.P) * Odds2)
     }
-    X2 = sum(colSums(X2.item, na.rm = T))
-    G2 = sum(2 * colSums(G2.item, na.rm = T))
+    X2 = sum(colSums(X2.item, na.rm = TRUE))
+    G2 = sum(2 * colSums(G2.item, na.rm = TRUE))
     df = J * (n.group - 3)
     G2.P = 1 - pchisq(G2, df)
     G2.ratio = G2/df

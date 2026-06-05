@@ -1,58 +1,46 @@
 #' @title Checking user speciflied input variables
-#' @description  Based on the given model, checking whether user
-#' speciflied input variables are correct. If the input variables
-#' are acceptable, this function will format them and then return them
-#' as a list. Otherwise, this function will return a error message to
-#' indicate which variables are unacceptable.
-#' @param Model A character to declare the type of items to be modeled.
-#' The parameter labels follow conventional use.
-#' '2pl' - Two parameter logistic (3PL) mode
 #'
-#' P(x=1|Theta,a,b)=1+exp(-D*a*(Theta-b))
-
-#' where x=1 is the correct response, theta is examinne's ability;
-#' a, b are the item discrimination, and difficulty parameter,
-#' respectively; D is the scaling constant 1 normal.
-#' @param data 	A matrix or data.frame consists of dichotomous data
-#' (1 for correct and 0 for wrong response), with missing data coded
-#' as in Missing (by default, Missing=-9). Each row of data represents
-#' a examinne' responses, and each column represents an
-#' @param PriorA The user specified logarithmic normal distribution prior for item
-#' discrimation (a) parameters in the 2PL models.
-#' A numeric with two hyperparameters
-#' mean and variance of logarithmic normal distribution for all a parameters.
-#' By default, PriorA=c(0,0.25), which means a log normal prior of mean=0 and
-#' variance=0.25 will be used for all item discrimation parameters.
-#' @param PriorB The user specified normal distribution prior for item difficulty (b)
-#' parameters in the 2PL models.
-#' A numeric with two hyperparameters mean and variance of normal distribution for
-#' all b parameters. By default, PriorB=c(0,4), which means a normal prior of
-#'  mean=0 and variance=4 will be used for all item difficulty parameters.
-#'@param InitialA The user specified starting values for item discrimation (a)
-#' parameters in the 2PL model. A 1 (default), single number (numeric), refers to set t
-#' his number to be the starting values of a for all items
-#' @param InitialB The user specified starting values for item difficulty (b)
-#'  parameters in the 2PL model. A 0 (default), single number (numeric),
-#'  refers to set this number to be the starting values of b for all items.
-#' @param Tol A single number (numeric), refers to convergence threshold
-#' for E-step cycles; defaults are 0.01.
-#' @param max.ECycle A single integer, refers to maximum number of E-step cycles;
-#' defaults are 100L.
-#' @param max.MCycle A single integer, refers to maximum number of M-step
-#' cycles; defaults are 3L.
-#' @param n.Quadpts A single integer, refers to number of quadrature points
-#' per dimension (must be larger than 5); defaults are 50L.
-#' @param n.decimal A single integer, refers to number of decimal places when o
-#' utputs results. defaults are 5L.
-#' @param Theta.lim A numeric with two number, refers to the range of
-#' integration grid for each dimension; default is c(-4, 4).
-#' @param Missing A single number (numeric) to indicate which elements are missing;
-#' default is -9. The Missing cannot be 0 or 1.
-#' @param ParConstraint A logical value to indicate whether estimates
-#' parametes in a reasonable range; default is FALSE.
-#' @param BiasSE A logical value to determine whether directly estimating
-#' SEs from inversed Hession matrix rather than USEM method, default is FALSE
-#' @param D the scaling constant 1 normal or 1.702 log.
+#' @description  Verifies whether the input variables provided by the
+#' user are correct based on the 2PL model specifications. If acceptable,
+#' the function formats and returns them as a combined list; otherwise,
+#' it throws an error
+#'
+#' @param Model A character string declaring the type of item model (e.g., "2PL").
+#' @param data A matrix or data.frame consisting of dichotomous data
+#'     (1 for correct and 0 for wrong response), with missing data coded
+#'     as in \code{Missing}.
+#' @param PriorA A numeric vector or matrix specifying the log-normal prior
+#'     distribution hyperparameters (mean and variance) for item discrimination.
+#'     Defaults to c(0, 0.25).
+#' @param PriorB A numeric vector or matrix specifying the normal prior
+#'     distribution hyperparameters (mean and variance) for item difficulty.
+#'     Defaults to c(0, 4).
+#' @param InitialA A single numeric value or vector specifying initial
+#'     values for item discrimination parameters. Defaults to 1.
+#' @param InitialB A single numeric value or vector specifying initial
+#'     values for item difficulty parameters. Defaults to 0.
+#' @param Tol A single numeric value specifying the convergence threshold
+#'     for E-step cycles. Defaults to 0.01.
+#' @param max.ECycle A single integer specifying the maximum number of
+#'     E-step cycles. Defaults to 50L.
+#' @param max.MCycle A single integer specifying the maximum number of
+#'     M-step cycles. Defaults to 10L.
+#' @param n.decimal A single integer specifying the number of decimal places
+#'     for output formatting. Defaults to 5L.
+#' @param n.Quadpts A single integer specifying the number of quadrature
+#'     points per dimension. Defaults to 50L.
+#' @param Theta.lim A numeric vector of length 2 defining the integration
+#'     grid boundaries. Defaults to c(-4, 4).
+#' @param Missing A single numeric value indicating missing elements.
+#'     Defaults to -9. Cannot be 0 or 1.
+#' @param ParConstraint A logical value indicating whether parameters are
+#'     constrained within a reasonable range. Defaults to FALSE.
+#' @param BiasSE A logical value determining whether to estimate SEs
+#'     directly from the inverted Hessian matrix. Defaults to FALSE.
+#' @param D A numeric scaling constant (1 or 1.702). Defaults to 1.
+#'
+#' @return A combined list containing formatted data arrays, sample sizes,
+#'     prior specifications, initial parameter values, and convergence controls.
 #'
 #' @author Juan Luis Legorreta Torres \email{jlegorreta2002@yahoo.com.mx}
 #'
@@ -61,18 +49,12 @@
 #' Madison, Wisconsin, U.S.A. Seock-Ho Kim The University ofGeorgia
 #' Athens, Georgia, u.S.A.
 #'
-#' @export irtchek2pl
+#' @export
 #' @examples
 #'data(dat01)
 #' library(irtbem2pl)
 #'  Checking_2PL<-irtchek2pl(Model = "2PL", dat01, D = 1)
-#'  #STOP: Some elements in data are not 1, 0 or Missing
-#'        #PriorA[2] is the variance, and it must bigger than 0!
-#'       # PriorB must have two input values unless PriorB=NA
-#'       #The min of Tol must bigger than 0
-#'       # Theta.lim[1] must bigger than Theta.lim[2] etc ....
 #'
-
  irtchek2pl<-function (Model = "2PL", data, PriorA = c(0, 0.25),
                        PriorB = c(0, 4), InitialA = 1, InitialB = 0,
                        Tol = 0.01, max.ECycle = 50L, max.MCycle = 10L,
