@@ -2,7 +2,7 @@
 % Please edit documentation in R/LikelihoodInfo2pl.R
 \name{LikelihoodInfo2pl}
 \alias{LikelihoodInfo2pl}
-\title{Maximum Likelihood Estimation (MLE)}
+\title{Compute Likelihood Information for the 2PL IRT Model}
 \usage{
 LikelihoodInfo2pl(
   data.simple,
@@ -16,29 +16,37 @@ LikelihoodInfo2pl(
 )
 }
 \arguments{
-\item{data.simple}{Data frame con la base}
+\item{data.simple}{A numeric matrix representing the simplified unique
+response patterns.}
 
-\item{CountNum}{number of items}
+\item{CountNum}{A numeric vector containing the frequencies of each unique
+response pattern.}
 
-\item{Model}{Two parameter logistic (2pl) model}
+\item{Model}{A character string declaring the type of IRT model to be evaluated
+(e.g., "2PL").}
 
-\item{Par.est0}{A list that consists of item parameters for each item
-based on the given model. For 2PL model, list(A, B)}
+\item{Par.est0}{A list containing current item parameter estimates (A and B).}
 
-\item{n.Quadpts}{A single integer, refers to number of quadrature points
-per dimension}
+\item{n.Quadpts}{A single integer indicating the number of quadrature points.}
 
-\item{node.Quadpts}{quadrature pointsper dimension.}
+\item{node.Quadpts}{A numeric vector containing the nodes of the quadrature grid.}
 
-\item{weight.Quadpts}{quadrature points per dimension}
+\item{weight.Quadpts}{A numeric vector containing the weights of the quadrature grid.}
 
-\item{D}{the scaling constant.  By default 1 normal or 1.702 log.}
-
-\item{data}{Data frame con la base}
+\item{D}{A numeric scaling constant (typically 1 or 1.702).}
+}
+\value{
+A list containing the following statistical components:
+\itemize{
+\item \code{LH} The log-likelihood value of the model given the data.
+\item \code{Deviance} The model deviance statistic calculated as -2 * LH.
+\item \code{f} A numeric matrix of expected frequencies per quadrature point.
+\item \code{fz} A numeric matrix of expected correct response frequencies based on P*.
+\item \code{rz} A numeric matrix of expected correct joint frequencies.
+}
 }
 \description{
-"Likelihood" is a statistical concept that measures how likely
-it is to observe a data outcome given a set of model parameters.
-Maximum-likelihood fitting of univariate distributions,
-allowing parameters to be held fixed if desired
+' Calculates the log-likelihood, deviance, and expected frequencies (f, fz, rz)
+required for the E-step of the Expectation-Maximization (EM) algorithm
+under a two-parameter logistic (2PL) model.
 }

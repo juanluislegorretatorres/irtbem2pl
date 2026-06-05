@@ -2,8 +2,7 @@
 % Please edit documentation in R/irtbem2pl.R
 \name{irtbem2pl}
 \alias{irtbem2pl}
-\title{Calibrating 2PL model via (a,b), proposed by Birnbaum
-(1968). Adjustment with Marginal Bayesian Modal Item Parameter Estimation.}
+\title{Calibrate 2PL Model via Marginal Bayesian Modal Estimation}
 \usage{
 irtbem2pl(
   data,
@@ -18,135 +17,111 @@ irtbem2pl(
   n.Quadpts = 50L,
   Theta.lim = c(-4, 4),
   Missing = -9,
-  ParConstraint = F,
-  BiasSE = F,
+  ParConstraint = FALSE,
+  BiasSE = FALSE,
   D = 1
 )
 }
 \arguments{
-\item{data}{A matrix or data.frame consists of dichotomous data
-(1 for correct and 0 for wrong response)}
+\item{data}{A matrix or data.frame consisting of dichotomous data
+(1 for correct and 0 for wrong response).}
 
-\item{PriorA}{A numeric value with two hyperparameters:
-the mean and variance of the log-normal distribution for all a parameters.
-By default, PriorA = c(0, 0.25), which means that a prior log-normal
-distribution with mean = 0 and variance = 0.25 will be used for all
-item discrimination parameters. Internally, in extreme cases,
-PriorA = c(1, exp(0.5)) is used, where exp(0.5) = 1.6487212181091309}
+\item{PriorA}{A numeric vector with two hyperparameters: the mean and
+variance of the log-normal distribution for all a parameters.
+Defaults to c(0, 0.25).}
 
-\item{PriorB}{The user specified normal distribution prior for item
-difficulty (b) #' parameters in the 2PL models.
-A numeric with two hyperparameters mean and variance of normal distribution for
-all b parameters. By default, PriorB=c(0,4), which means a normal prior of
-mean=0 and variance=4 will be used for all item difficulty parameters.}
+\item{PriorB}{A numeric vector with two hyperparameters: the mean and
+variance of the normal distribution prior for item difficulty (b)
+parameters. Defaults to c(0, 4).}
 
-\item{InitialA}{The user specifies initial values for the item discrimination
-parameters (a) in the 2PL model. It is suggested to use the TC parameters.
-A single (numeric) number, or 1 (default value), refers to the set of initial
-values for a for all items.}
+\item{InitialA}{A single numeric value or vector specifying initial
+values for the item discrimination parameters (a). Defaults to 1.
+It is recommended to use the point-biserial correlation from
+Classical Test Theory.}
 
-\item{InitialB}{The user specified initial values for the difficulty
-parameter (b) in the 2PL model. It is suggested to use TC values. The default
-value is 0 (a single number). This parameter indicates that this number will
-be the initial value of b for all items.}
+\item{InitialB}{A single numeric value or vector specifying initial
+values for the difficulty parameters (b). Defaults to 0.
+It is recommended to use the item difficulty index from
+Classical Test Theory.}
 
-\item{Tol}{A single number (numeric), refers to convergence threshold
-for E-step cycles; defaults are 0.01.}
+\item{Tol}{A single numeric value specifying the convergence threshold
+for E-step cycles. Defaults to 0.01.}
 
-\item{max.ECycle}{A single integer, refers to maximum number of E-step cycles;
-defaults are 50L.}
+\item{max.ECycle}{A single integer specifying the maximum number of
+E-step cycles. Defaults to 50L.}
 
-\item{max.MCycle}{A single integer, refers to maximum number of M-step
-cycles; defaults are 10L.}
+\item{max.MCycle}{A single integer specifying the maximum number of
+M-step cycles. Defaults to 10L.}
 
-\item{n.decimal}{A single integer, refers to number of decimal places when o
-utputs results defaults are 6L.}
+\item{n.decimal}{A single integer specifying the number of decimal
+places for the output results. Defaults to 5L.}
 
-\item{n.Quadpts}{A single integer, refers to number of quadrature points
-per dimension (must be larger than 5); defaults are 50L.}
+\item{n.Quadpts}{A single integer specifying the number of quadrature
+points per dimension (must be larger than 5). Defaults to 50L.}
 
-\item{Theta.lim}{A numeric with two number, refers to the range of
-integration grid for each dimension; default is c(-4, 4).}
+\item{Theta.lim}{A numeric vector of length 2 defining the integration
+grid range for each dimension. Defaults to c(-4, 4).}
 
-\item{Missing}{A single number (numeric) to indicate which elements are missing;
-default is -9. The Missing cannot be 0 or 1.}
+\item{Missing}{A single numeric value indicating missing elements.
+Defaults to -9. Cannot be 0 or 1.}
 
-\item{ParConstraint}{A logical value to indicate whether estimates
-parametes in a reasonable range; default is FALSE.}
+\item{ParConstraint}{A logical value indicating whether to restrict
+estimates within a reasonable range. Defaults to FALSE.}
 
-\item{BiasSE}{A logical value to determine whether directly estimating
-SEs from inversed Hession matrix rather than USEM method, default is FALSE}
+\item{BiasSE}{A logical value determining whether to estimate SEs
+directly from the inverted Hessian matrix. Defaults to FALSE.}
 
-\item{D}{The scale constant is 1 or 1.702. The default value is 1}
+\item{D}{A numeric scale constant (1 or 1.702). Defaults to 1.}
 }
 \value{
-This function will return a list includes following:
+A list containing the following components:
 \itemize{
-\item \verb{Est.ItemPars (a,b):} A dataframe consists of the estimates of a, b and c
-and corresponding estimated standard errors.
-\item \verb{Est.Theta (ability scale:)} A dataframe consists of the estimates of theta
-and corresponding estimated standard errors (EAP method).
-\item \verb{Loglikelihood:} The loglikelihood.
-\item \verb{Iteration The:} number of iterations.
-\item \verb{EM.Map:} The parameter estimation history of iterations.
-\item \verb{fits.test:} The model fits information includes G2 test, AIC, BIC and RMSEA.
-\item \verb{Elapsed.time:} The running time of the program.
-\item \verb{InitialValues:} The initial values of item parameters.
+\item \code{Est.ItemPars} A data frame with estimates of parameters a and b, along with their standard errors.
+\item \code{Est.Theta} A data frame with EAP ability estimates and their standard errors.
+\item \code{Loglikelihood} The final log-likelihood value.
+\item \code{Iteration} The number of iterations until convergence.
+\item \code{EM.Map} The parameter estimation history across iterations.
+\item \code{fits.test} Model fit statistics including G2, AIC, BIC, and RMSEA.
+\item \code{Elapsed.time} Total execution time of the program.
+\item \code{InitialValues} The initial values used for item calibration.
 }
 }
 \description{
-This function can estimate the item parameters of the 2PL model
-using Bayesian statistics. The results are similar to those of BILOG MG,
-from the book "Item Response Theory Parameter Estimation Techniques".
+' Estimates item parameters of the two-parameter logistic (2PL)
+model using marginal Bayesian modal estimation via the Expectation-Maximization
+(EM) algorithm. The results are similar to those of "BILOG-MG",
+from the book Item Response Theory Parameter Estimation Techniques.
 }
 \details{
-Two parameter logistic (2pl) model proposed by Birnbaum (1968):
-
-P(x=1|Theta,a,b)=1+exp(-D\emph{a}(Theta-b))
-
-where x=1 is the correct response, theta is examinne's ability;
-a, b are the item discrimination, and difficulty parameter,
-respectively; D is the scaling constant 1 normal.
-
-The implementation of expected a posteriori (EAP) ability estimation
-has communalities with the E-step of both marginal maximum likelihood /
-expectation-maximization (MMLE/EM) and Bayesian modal estimation /
-expectation-maximization (MBE/EM) estimation of item parameters.
+The two-parameter logistic (2PL) model proposed by Birnbaum (1968)
+is defined as:
+\deqn{P(x=1|\Theta,a,b) = \frac{1}{1 + exp(-D \cdot a \cdot (\Theta - b))}}
+where x=1 is the correct response, \code{Theta} is the examinee's ability,
+\code{a} is the item discrimination, and \code{b} is the difficulty parameter.
 }
 \examples{
 data(dat01)
-library(irtbem2pl)
 
-#Use preferably
-#InitialA =Biserial_point (theory classic items)
-#InitialB =Difcultad (theory classic items)
+# It is recommended to use:
+# InitialA = point-biserial correlation (Classical Test Theory)
+# InitialB = item difficulty index (Classical Test Theory)
 
- mod_2PL<-irtbem2pl(data=dat01,PriorA = c(0, 0.25),PriorB = c(0, 4),
- InitialA =1, InitialB =0,Tol = 0.01,max.ECycle = 50L,max.MCycle = 10L,
- n.decimal = 5L ,n.Quadpts = 50L,Theta.lim = c(-4, 4),Missing = -9,
- ParConstraint = F,BiasSE = F,D=1)
+mod_2PL <- irtbem2pl(data = dat01, PriorA = c(0, 0.25), PriorB = c(0, 4),
+                     InitialA = 1, InitialB = 0, Tol = 0.01, max.ECycle = 50L,
+                     max.MCycle = 10L, n.decimal = 5L, n.Quadpts = 50L,
+                     Theta.lim = c(-4, 4), Missing = -9, ParConstraint = FALSE,
+                     BiasSE = FALSE, D = 1)
 
- mod_2PL$Est.ItemPars       #show item estimates
- mod_2PL$Est.Theta          #show ability estimates
-
-
+mod_2PL$Est.ItemPars       # show item estimates
+mod_2PL$Est.Theta          # show ability estimates
 }
 \references{
-\emph{Item Response Theory Parameter Estimation Techniques}
-Second Edition, Revised and Expanded Frank B. Baker University ofWisconsin
-Madison, Wisconsin, U.S.A. Seock-Ho Kim The University ofGeorgia
-Athens, Georgia, u.S.A.
+Baker, F. B., & Kim, S.-H. (2004). \emph{Item Response Theory: Parameter
+Estimation Techniques} (2nd ed.). Marcel Dekker.
 
 Birnbaum, A. (1968). Some latent trait models and their use in inferring an
-examinee's ability. In F. M. Lord & M. R. Novick (Eds.), Statistical theories
-of mental test scores (pp. 395-479). MA: Adison-Wesley.
-
-Guo, S., & Zheng, C. (2019). The Bayesian Expectation-Maximization-Maximization
-for the 3PLM. Frontiers in Psychology, 10(1175), 1-11. doi:10.3389/fpsyg.2019.01175
-
-Zheng, C., Meng, X., Guo, S., & Liu, Z. (2018). Expectation-Maximization-Maximization:
-A feasible MLE algorithm for the three-parameter logistic model based on a mixture
-modeling reformulation. Frontiers in Psychology, 8(2302), 1-10. doi:10.3389/fpsyg.2017.02302
+examinee's ability. In F. M. Lord & M. R. Novick (Eds.), \emph{Statistical
+theories of mental test scores} (pp. 395-479). Addison-Wesley.
 }
 \author{
 Juan Luis Legorreta Torres \email{jlegorreta2002@yahoo.com.mx}
